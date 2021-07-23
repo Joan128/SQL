@@ -1,0 +1,52 @@
+-- first touch
+
+with first_touch as (
+  select user_id,
+    min(timestamp) as first_touch_at
+  from page_visits
+  group by user_id
+),
+ft_attr as (
+  select ft.user_id,
+    ft.first_touch_at,
+    pv.utm_source,
+    pv.utm_campaign
+  from first_touch as ft
+  join page_visits as pv
+    on ft.user_id = pv.user_id
+    and ft.first_touch_at = pv.timestamp
+),
+-- last touch
+last_touch as (
+  select user_id,
+    max(timestamp) as last_touch_at
+  from page_visits
+/* if want to see purchasing attribute
+  where page_name = '4 - purchase'
+*/
+  group by user_id
+),
+lt_attr as (
+  select lt.user_id,
+    lt.last_touch_at,
+    pv.utm_source,
+    pv.utm_campaign
+  from last_touch as lt
+  join page_visits as pv
+    on lt.user_id = pv.user_id
+    and lt.last_touch_at = pv.timestamp
+)
+select utm_campaign, 
+  utm_source,
+  count(user_id) as num_first_touch
+from ft_attr
+group by 1
+order by 2 desc;
+select utm_campaign,
+  utm_source,
+  count(user_id) as num_last_touch
+from lt_attr
+group by 1
+order by 2 desc;
+
+
